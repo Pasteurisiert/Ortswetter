@@ -151,7 +151,7 @@ def app():
 
     today = pd.Timestamp(dt.date.today())
 
-    fig, axes = plt.subplots(1, 3, figsize=(15, 5), sharex=True)
+    fig, axes = plt.subplots(1, 3, figsize=(13, 9), sharex=True)
     ax1, ax2, ax3 = axes
 
     # ---- Plot 1: Temperatur & Taupunkt ----
