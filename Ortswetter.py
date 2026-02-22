@@ -33,7 +33,7 @@ def geocode_location(name, country=None):
         "timezone": loc.get("timezone", "auto")
     }
 
-def fetch_weather(lat, lon, timezone, past_days=10, forecast_days=16):
+def fetch_weather(lat, lon, timezone, past_days=8, forecast_days=16):
     """Stündliche Daten für T/Taupunkt/Niederschlag + tägliche Daten für Wind."""
     url = "https://api.open-meteo.com/v1/forecast"
     params = {
@@ -126,7 +126,7 @@ def streamlit_select_location():
 # ---------- Hauptlogik für Streamlit ----------
 
 def app():
-    st.title("Open-Meteo Wetterübersicht (10 Tage zurück, 16 Tage voraus)")
+    st.title("Open-Meteo Wetterübersicht (8 Tage zurück, 16 Tage voraus)")
 
     ort, land = streamlit_select_location()
 
