@@ -157,10 +157,10 @@ def app():
     # ---- Plot 1: Temperatur & Taupunkt ----
     ax1.plot(daily_temp_dew.index, daily_temp_dew["tmin"], label="Tmin [°C]")
     ax1.plot(daily_temp_dew.index, daily_temp_dew["tmax"], label="Tmax [°C]")
-    ax1.plot(daily_temp_dew.index, daily_temp_dew["dew_mean"], label="Taupunkt Mittel [°C]")
+    #ax1.plot(daily_temp_dew.index, daily_temp_dew["dew_mean"], label="Taupunkt Mittel [°C]")
     ax1.axvline(today, color="red", linestyle="--", linewidth=1, label="Heute")
     ax1.set_ylabel("Temperatur [°C]")
-    ax1.set_title("Min/Max Temperatur & Taupunkt")
+    ax1.set_title("Min/Max Temperatur")
     ax1.grid(True, alpha=0.3)
     ax1.legend(
         loc="upper center",
