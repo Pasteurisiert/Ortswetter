@@ -164,7 +164,7 @@ def app():
     ax1.grid(True, alpha=0.3)
     ax1.legend(
         loc="upper center",
-        bbox_to_anchor=(0.5, -0.25),
+        bbox_to_anchor=(0.5, -0.5),
         borderaxespad=0.0,
         ncol=2,
         fontsize=8,
@@ -180,13 +180,13 @@ def app():
     ax2.bar(x, rain, label="Regen [mm]", color="tab:blue")
     ax2.bar(x, snow, bottom=rain, label="Schneefall [mm]", color="tab:cyan")
     ax2.plot(x, total, color="black", linestyle="--", label="Gesamt [mm]")
-    ax2.axvline(today, color="red", linestyle="--", linewidth=1)
+    ax2.axvline(today, color="red", linestyle="--", linewidth=1, label="Heute")
     ax2.set_ylabel("Niederschlag [mm]")
     ax2.set_title("Niederschlag & Schnee (24h-Summen)")
     ax2.grid(True, axis="y", alpha=0.3)
     ax2.legend(
         loc="upper center",
-        bbox_to_anchor=(0.5, -0.25),
+        bbox_to_anchor=(0.5, -0.50),
         borderaxespad=0.0,
         ncol=2,
         fontsize=8,
@@ -203,7 +203,7 @@ def app():
     ax3.plot(wd.index, wd["wind_speed_10m_min"], label="Wind min [km/h]", color="tab:green")
     ax3.plot(wd.index, wd["wind_speed_10m_max"], label="Wind max [km/h]", color="tab:orange")
     ax3.plot(wd.index, wd["wind_gusts_10m_max"], label="Böen max [km/h]", color="tab:red")
-    ax3.axvline(today, color="black", linestyle="--", linewidth=1, label="Heute")
+    ax3.axvline(today, color="red", linestyle="--", linewidth=1, label="Heute")
 
     ax3.axhline(strong_wind_th, color="gray", linestyle="--", linewidth=1)
     ax3.axhline(storm_th,       color="gray", linestyle="--", linewidth=1)
@@ -235,7 +235,7 @@ def app():
     ax3.grid(True, alpha=0.3)
     ax3.legend(
         loc="upper center",
-        bbox_to_anchor=(0.5, -0.25),
+        bbox_to_anchor=(0.5, -0.5),
         borderaxespad=0.0,
         ncol=2,
         fontsize=8,
