@@ -33,7 +33,7 @@ def geocode_location(name, country=None):
         "timezone": loc.get("timezone", "auto")
     }
 
-def fetch_weather(lat, lon, timezone, past_days=8, forecast_days=16):
+def fetch_weather(lat, lon, timezone, past_days=10, forecast_days=16):
     """Stündliche Daten für T/Taupunkt/Niederschlag + tägliche Daten für Wind."""
     url = "https://api.open-meteo.com/v1/forecast"
     params = {
@@ -84,35 +84,25 @@ def daily_min_max_temp_and_dew(df_hourly):
     agg["dew_mean"] = df_hourly["dew_point_2m"].resample("1D").mean()
     return agg
 
+# ---------- Auswahlmenü für Orte ----------
 
-def select_location():
-    print("Bitte Ort auswählen:")
-    for i, (name, country) in enumerate(PRESET_LOCATIONS, start=1):
-        print(f"{i:2d}) {name}, {country}")
-    print("11) Freie Eingabe")
-
-    while True:
-        choice = input("Auswahl (1–11): ").strip()
-        try:
-            num = int(choice)
-        except ValueError:
-            print("Bitte eine Zahl eingeben.")
-            continue
-
-        if 1 <= num <= 10:
-            name, country = PRESET_LOCATIONS[num - 1]
-            return name, country
-        elif num == 11:
-            ort = input("Ort eingeben (z.B. 'Fislisbach'): ").strip()
-            land = input("Optional: Ländercode (z.B. 'CH', leer für automatisch): ").strip() or None
-            return ort, land
-        else:
-            print("Ungültige Auswahl, bitte erneut versuchen.")
+PRESET_LOCATIONS = [
+    ("Fislisbach", "CH"),
+    ("Zürich", "CH"),
+    ("Basel", "CH"),
+    ("Bern", "CH"),
+    ("Genf", "CH"),
+    ("Hamburg", "DE"),
+    ("Berlin", "DE"),
+    ("Wien", "AT"),
+    ("Oslo", "NO"),
+    ("Tokyo", "JP"),
+]
 
 def streamlit_select_location():
     st.sidebar.header("Standortwahl")
     options = [f"{name}, {country}" for name, country in PRESET_LOCATIONS] + ["Freie Eingabe"]
-    choice = st.sidebar.selectbox("Ort auswählen", options)  # Dropdown im Sidebar[web:124][web:130]
+    choice = st.sidebar.selectbox("Ort auswählen", options)
 
     if choice != "Freie Eingabe":
         idx = options.index(choice)
@@ -122,22 +112,12 @@ def streamlit_select_location():
         ort = st.sidebar.text_input("Ort (z.B. 'Fislisbach')", "")
         land = st.sidebar.text_input("Ländercode (z.B. 'CH', optional)", "")
         if not ort:
-            st.stop()  # warten, bis Ort eingetragen ist
+            st.stop()
         return ort, (land or None)
 
+# ---------- Hauptlogik für Streamlit ----------
 
-
-# ---------- Hauptlogik ----------
-
-def main():
-    # ort, land = select_location()
-
-    # loc = geocode_location(ort, land)
-    # label = f"{loc['name']}, {loc.get('country', '')} (lat={loc['lat']:.3f}, lon={loc['lon']:.3f})"
-    # print("Verwende Standort:", label)
-
-    # df_hourly, df_daily_wind = fetch_weather(loc["lat"], loc["lon"], loc["timezone"])
-    
+def app():
     st.title("Open-Meteo Wetterübersicht (10 Tage zurück, 16 Tage voraus)")
 
     ort, land = streamlit_select_location()
@@ -157,28 +137,26 @@ def main():
         st.error(f"Fehler beim Abrufen der Wetterdaten: {e}")
         st.stop()
 
-    # Tagesaggregation aus stündlichen Daten
+    # Tagesaggregation
     daily_temp_dew = daily_min_max_temp_and_dew(df_hourly)
     daily_precip = aggregate_daily_precip(df_hourly)
 
-    # Heutiges Datum (ohne Zeit)
     today = pd.Timestamp(dt.date.today())
 
-    # 1x3 Subplots mit gemeinsamer x-Achse
-    fig, axes = plt.subplots(1, 3, figsize=(13, 7), sharex=True)
+    fig, axes = plt.subplots(1, 3, figsize=(15, 5), sharex=True)
     ax1, ax2, ax3 = axes
 
     # ---- Plot 1: Temperatur & Taupunkt ----
     ax1.plot(daily_temp_dew.index, daily_temp_dew["tmin"], label="Tmin [°C]")
     ax1.plot(daily_temp_dew.index, daily_temp_dew["tmax"], label="Tmax [°C]")
     ax1.plot(daily_temp_dew.index, daily_temp_dew["dew_mean"], label="Taupunkt Mittel [°C]")
-    ax1.axvline(today, color="red", linestyle="--", linewidth=2, label="Heute")
+    ax1.axvline(today, color="red", linestyle="--", linewidth=1, label="Heute")
     ax1.set_ylabel("Temperatur [°C]")
     ax1.set_title("Min/Max Temperatur & Taupunkt")
     ax1.grid(True, alpha=0.3)
     ax1.legend(
         loc="upper center",
-        bbox_to_anchor=(0.5, -0.25),   # unterhalb der x-Achse, zentriert im Subplot[web:87][web:88][web:97]
+        bbox_to_anchor=(0.5, -0.25),
         borderaxespad=0.0,
         ncol=2,
         fontsize=8,
@@ -194,7 +172,7 @@ def main():
     ax2.bar(x, rain, label="Regen [mm]", color="tab:blue")
     ax2.bar(x, snow, bottom=rain, label="Schneefall [mm]", color="tab:cyan")
     ax2.plot(x, total, color="black", linestyle="--", label="Gesamt [mm]")
-    ax2.axvline(today, color="red", linestyle="--", linewidth=2, label="Heute")
+    ax2.axvline(today, color="red", linestyle="--", linewidth=1)
     ax2.set_ylabel("Niederschlag [mm]")
     ax2.set_title("Niederschlag & Schnee (24h-Summen)")
     ax2.grid(True, axis="y", alpha=0.3)
@@ -214,18 +192,15 @@ def main():
 
     wd = df_daily_wind
 
-    # Linien: min/max Wind + Böen
     ax3.plot(wd.index, wd["wind_speed_10m_min"], label="Wind min [km/h]", color="tab:green")
     ax3.plot(wd.index, wd["wind_speed_10m_max"], label="Wind max [km/h]", color="tab:orange")
     ax3.plot(wd.index, wd["wind_gusts_10m_max"], label="Böen max [km/h]", color="tab:red")
-    ax3.axvline(today, color="red", linestyle="--", linewidth=2, label="Heute")
+    ax3.axvline(today, color="black", linestyle="--", linewidth=1, label="Heute")
 
-    # horizontale Referenzlinien
     ax3.axhline(strong_wind_th, color="gray", linestyle="--", linewidth=1)
     ax3.axhline(storm_th,       color="gray", linestyle="--", linewidth=1)
     ax3.axhline(max_fill,       color="gray", linestyle=":",  linewidth=1)
 
-    # Bereich 39–50 km/h: starker Wind
     ax3.fill_between(
         wd.index,
         strong_wind_th,
@@ -236,7 +211,6 @@ def main():
         label="Starker Wind (≥39 km/h)"
     )
 
-    # Bereich 50–89 km/h: Sturm
     ax3.fill_between(
         wd.index,
         storm_th,
@@ -260,27 +234,12 @@ def main():
         frameon=False
     )
 
-    # Platz für die Legenden unter den Subplots
     fig.subplots_adjust(bottom=0.3)
-
-    # Gesamttitel & Datumsformat
     fig.suptitle(label, fontsize=11)
     fig.autofmt_xdate(rotation=45)
-    fig.tight_layout()#rect=[0, 0.08, 1, 0.95])
+    fig.tight_layout(rect=[0, 0.08, 1, 0.95])
 
-    plt.show()
+    st.pyplot(fig, use_container_width=True)
 
 if __name__ == "__main__":
-    
-    PRESET_LOCATIONS = [
-    ("Fislisbach", "CH"),
-    ("Hamburg", "DE"),
-    ("Haugesund", "NO"),
-    ("Bodø", "NO"),
-    ("Sortland", "NO"),
-    ("Harstad", "NO"),
-    ("Tromsø", "NO"),
-    ("Alta", "NO"),
-    ("Trondheim", "NO"),
-    ("Måløy", "NO"),]
-    main()
+    app()
